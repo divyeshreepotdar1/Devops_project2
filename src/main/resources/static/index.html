@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+<script>
+	"use strict";
+	// Function movieTicket() decides if the user has won raffle ticket or not
+	const url = window.location.hostname;
+	const token = 'Bearer token-jmjgz:4lvtlgcs7z7ftxpzs555wh7mnrc8l7bx2xw5j8ncxqnxwnfdjktfqh';
+	const headers = {'Content-Type': 'application/json'};
+	const path = window.location.href;
+	let pathWithoutParams = window.location.pathname;
+	history.replaceState(null, null, pathWithoutParams);
+
+
+	function viewAllSurveys() {
+		fetch(`${path}form/viewAllRecords`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json; charset=utf-8',
+				'Authorization': token,
+				'Accept': 'application/json'
+			}
+		}).then(response => {
+			console.log(response);
+			if (response.ok) {
+				alert('All Surveys records fetched successfully!');
+				return response.json();
+			} else {
+				alert('Failed to fetch all Survey records.');
+			}
+		}).then(records => {
+			// Create an HTML table to display the survey records
+			let html = '<table border="1px solid black" style="margin: 0 auto; width: fit content; height: fit content"><thead style="background-color: #707B7C;"><tr><th>First Name</th><th>Last Name</th><th>Won Raffle Ticket</th><th>Survey Date</th></tr></thead><tbody style="background-color: #CCD1D1;">';
+			records.forEach(record => {
+				const won = record.won ? 'Yes' : 'No';
+				html += `<tr><td>${record.firstName}</td><td>${record.lastName}</td><td>${won}</td><td>${record.surveyDate}</td></tr>`;
+			});
+			html += '</tbody></table>';
+			// Set the HTML content of the modal popup to the table
+			const modal = document.getElementById("myModal");
+			const modalContent = document.getElementById("table-container");
+			modalContent.innerHTML = html;
+			// Open the modal popup
+			modal.style.display = "block";
+			// Close the modal popup when the user clicks on the close button
+			const closeBtn = document.getElementsByClassName("close")[0];
+			closeBtn.onclick = function () {
+				modal.style.display = "none";
+			}
+			// Close the modal popup when the user clicks anywhere outside of it
+			window.onclick = function (event) {
+				if (event.target == modal) {
+					modal.style.display = "none";
+				}
+			}
+		}).catch(error => {
+			console.error(error);
+			alert('Failed to fetch all Survey records.');
+		});
+	}
+
+	function movieTicket() {
+		let isSubmitFailed = true;
+		let isRaffleWon = false;
+		const raffleWonAlertMessage = "Congratulations! You won a free movie ticket.";
+		const raffleLostAlertMessage = "Sorry, you didn't win a free movie ticket.";
+		const invalidNumberAlertMessage = "Raffle Fields Invalid:Please enter at least 10 comma separated numbers from 1 to 100 in the Raffle field.";
+		const selectRaffleField = document.getElementById("raffle");
+		const inputtedRaffleNumbers = selectRaffleField.value.split(",").map(num => parseInt(num.trim()));
+		console.log(inputtedRaffleNumbers)
+		const validNumberCheck = inputtedRaffleNumbers.filter(num => num >= 1 && num <= 100);
+		const targetsum = 50;
+		console.log(validNumberCheck);
+		let response = {
+			firstName: document.getElementById("firstName").value,
+			lastName: document.getElementById("lastName").value,
+			streetAddress: document.getElementById("streetAddress").value,
+			city: document.getElementById("city").value,
+			state: document.getElementById("state").value,
+			zip: document.getElementById("zip").value,
+			telephoneNumber: document.getElementById("phoneNumber").value,
+			email: document.getElementById("email").value,
+			surveyDate: document.getElementById("dateOfSurvey").value,
+			likes: Array.from(document.getElementsByName("likes")).filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value),
+			universityInterest: document.querySelector('input[name="interest"]:checked')?.value || "",
+			recommendation: document.getElementById("recommendation").value,
+			comments: document.getElementById("comments").value,
+			won: false,
+			numbersEntered: "",
+		};
+		//Raffle field is empty
+		if (inputtedRaffleNumbers.length === 1 && isNaN(inputtedRaffleNumbers[0])) {
+			isSubmitFailed = false;
+		} else {
+			if (validNumberCheck.length >= 4) {
+				isSubmitFailed = false;
+				let curr_sum = 0;
+				for (let i = 0; i < validNumberCheck.length; i++) {
+					curr_sum += validNumberCheck[i];
+				}
+				if (curr_sum >= targetsum) {
+					isRaffleWon = true;
+					isSubmitFailed = false;
+				}
+			} else {
+				isSubmitFailed = true;
+			}
+		}
+		if (isSubmitFailed == true) {
+			alert(invalidNumberAlertMessage);
+			return false;
+		} else {
+			if (isRaffleWon == true) {
+				alert(raffleWonAlertMessage);
+				response.won = true;
+			} else {
+				alert(raffleLostAlertMessage);
+				response.won = false;
+			}
+			fetch(`${path}form/submit`, {
+				method: 'POST',
+				headers: headers,
+				body: JSON.stringify(response)
+			}).then(response => {
+				if (response.ok) {
+					alert('Form submitted successfully!');
+				} else {
+					alert('Failed to submit form.');
+				}
+			}).catch(error => {
+				console.error(error);
+				//alert('An error occurred while submitting the form.');
+			});
+			return true;
+		}
+	}
+
+</script>
+
+<head>
+	<title>Student Survey Form</title>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="pageStyle.css">
+</head>
+
+<body>
+	<h1>Student Survey Form</h1>
+	<form onsubmit="return movieTicket()" autocomplete="on" name="surveyForm">
+		<label for="firstName">First Name *</label>
+		<input type="text" id="firstName" name="firstName" placeholder="Enter your First Name" pattern="[a-zA-Z ]+" required>
+
+		<label for="lastName">Last Name *</label>
+		<input type="text" id="lastName" name="lastName" placeholder="Enter your Last Name" pattern="[a-zA-Z ]+" required>
+
+		<label for="streetAddress">Street Address *</label>
+		<input type="text" id="streetAddress" name="streetAddress" placeholder="Enter your Street Address" required>
+
+		<label for="city">City *</label>
+		<input type="text" id="city" name="city" placeholder="Enter your City" pattern="[a-zA-Z ]+" required>
+
+		<label for="state">State *</label>
+		<input type="text" id="state" name="state" placeholder="Enter your State" pattern="[a-zA-Z ]+" required>
+
+		<label for="zip">Zip *</label>
+		<input type="text" id="zip" name="zip" placeholder="Enter your Zip code" pattern="^[0-9]*$" required>
+
+		<label for="phoneNumber">Telephone Number *</label>
+		<input type="tel" id="phoneNumber" name="phoneNumber" placeholder="Enter your Phone number (012-345-6789)" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" required>
+
+		<label for="email">E-mail *</label>
+		<input type="email" id="email" name="email" placeholder="Enter your Email Address" required>
+
+		<label for="dateOfSurvey">Date of Survey *</label>
+		<input type="date" id="dateOfSurvey" name="dateOfSurvey" required>
+
+		<label class="rad">What did you like most about the campus?</label>
+		<input type="checkbox" id="likes" name="likes" value="students" checked>
+		<label for="likeStudents">Students</label>
+		<input type="checkbox" id="likes" name="likes" value="location">
+		<label for="likeStudents">Location</label>
+		<input type="checkbox" id="likes" name="likes" value="campus">
+		<label for="likeStudents">Campus</label>
+		<input type="checkbox" id="likes" name="likes" value="atmosphere">
+		<label for="likeStudents">Atmosphere</label>
+		<input type="checkbox" id="likes" name="likes" value="dormrooms">
+		<label for="likeStudents">Dorm rooms</label>
+		<input type="checkbox" id="likes" name="likes" value="sports">
+		<label for="likeStudents">Sports</label>
+
+
+		<label class="rad">How did you become interested in the university?</label>
+		<input type="radio" id="interestFriends" name="interest" value="friends" checked>
+		<label for="interestFriends">Friends</label>
+		<input type="radio" id="interestTelevision" name="interest" value="television">
+		<label for="interestTelevision">Television</label>
+		<input type="radio" id="interestInternet" name="interest" value="internet">
+		<label for="interestInternet">Internet</label>
+		<input type="radio" id="interestOther" name="interest" value="other">
+		<label for="interestOther">Other</label>
+
+		<label for="recommendation" class="rad">Likelihood of Recommending *</label>
+		<select id="recommendation" name="recommendation" required>
+			<option selected disabled value="defaultOption">Select Option...</option>
+			<option value="Very Likely" selected>Very Likely</option>
+			<option value="Likely">Likely</option>
+			<option value="Unlikely">Unlikely</option>
+		</select>
+
+		<label for="raffle">Raffle (Enter at least ten comma-separated numbers from 1 through 100) *</label>
+		<input type="text" id="raffle" name="raffle" pattern="(?:[1-9][0-9]?|100)(?:,(?:[1-9][0-9]?|100)){9}"
+			placeholder="eg. 1,34,2,56,75,22,25,42,88,99" required>
+
+		<label for="comments">Additional Comments</label>
+		<textarea id="comments" name="comments" rows="4" cols="50" placeholder="Enter Additional comments"></textarea>
+
+		<div class="buttons">
+			<input id="submitButton" type="submit" value="Submit">
+			<input type="reset" value="Cancel">
+		 	<input id="viewRecords" type="submit" value="View Records" onclick="viewAllSurveys()">
+		</div>
+	  </form>
+     <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePopup()">&times;</span>
+            <div id="table-container"></div>
+        </div>
+    </div>
+  
+</body>
+
+</html>
