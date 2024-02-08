@@ -1,4 +1,3 @@
-**Readme File: Microservices-Based Application Deployment**
 
 **Introduction:**
 This document outlines the comprehensive steps taken to complete Homework Assignment 3, which involves the creation of a microservices-based application using Spring Boot, RESTful Web Services, JPA/Hibernate, and ReactJS. The application is further integrated with Amazon RDS/MySQL for CRUD operations, containerized using Docker, and deployed on Kubernetes.
